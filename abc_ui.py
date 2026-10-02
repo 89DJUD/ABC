@@ -42,17 +42,8 @@ def reset_settings():
 
 
 def sidebar():
+    df = load_csv(DEFAULT_CSV)
     with st.sidebar:
-        st.subheader("Données", divider="gray")
-        up = st.file_uploader("Fichier CSV d'inventaire", type="csv",
-                              help="Laisser vide pour utiliser inventory_data.csv")
-        df = load_csv(up if up is not None else DEFAULT_CSV)
-        err = core.validate(df)
-        if err:
-            st.error(err, icon=":material/error:")
-            st.stop()
-        st.caption(f"{'Fichier importé' if up else 'inventory_data.csv'} · {len(df)} articles")
-
         st.subheader("Poids des critères TOPSIS", divider="gray")
         for c in core.CRITERIA:
             st.slider(c, 0.0, 5.0, step=0.5, key="w_" + c)
