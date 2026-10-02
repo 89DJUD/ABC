@@ -1,4 +1,4 @@
-"""Logique métier partagée : scores Table 1, critères Table 2, TOPSIS, ABC, Fuzzy TOPSIS, ML."""
+"""Logique métier partagée : scores Table 1, critères Table 2, TOPSIS, ABC, ML."""
 import numpy as np
 import pandas as pd
 
@@ -20,22 +20,13 @@ TABLE2 = {
 }
 CRITERIA = ["Criticality", "Demand", "Supply", "Cost", "Size"]
 LABELS = ["A", "B", "C"]
-CLASS_COLORS = {"A": "#C44E52", "B": "#DD8452", "C": "#4C72B0"}
-
-TFN_LING = {
-    "Risk": {"Low": (0.18, 0.18, 0.35), "Normal": (0.18, 0.35, 0.47), "High": (0.35, 0.47, 0.47)},
-    "Demand fluctuation": {"Ending": (0.00, 0.00, 0.16), "Decreasing": (0.00, 0.16, 0.20),
-                           "Unknown": (0.00, 0.20, 0.36), "Stable": (0.20, 0.28, 0.36),
-                           "Increasing": (0.28, 0.36, 0.36)},
-    "Consignment stock": {"No": (0.80, 0.80, 0.80), "Yes": (0.20, 0.20, 0.20)},
-    "Unit size": {"Small": (0.13, 0.13, 0.31), "Medium": (0.13, 0.31, 0.53), "Large": (0.31, 0.53, 0.53)},
-}
-FUZZY_WEIGHT_TERMS = {
-    "Peu important": (0.0, 0.25, 0.5),
-    "Moyennement important": (0.25, 0.5, 0.75),
-    "Important": (0.5, 0.75, 1.0),
-    "Très important": (0.75, 1.0, 1.0),
-}
+# Identité visuelle (cohérente avec .streamlit/config.toml)
+PRIMARY = "#0E5E5A"      # sarcelle profond
+MUTED = "#C9D3CF"        # gris-vert pour les éléments secondaires
+GRID = "#D9D1C3"
+CLASS_COLORS = {"A": "#B4432F", "B": "#E0A23A", "C": "#4F7C8A"}   # terre cuite, safran, ardoise
+TEAL_SCALE = ["#F4F1EA", "#BFD8D3", "#79ADA6", "#3A7C76", "#0A3532"]
+SHORT_NAMES = {"Réseau de neurones (MLP)": "MLP", "SVM (RBF)": "SVM", "Régression logistique": "Rég. logistique"}
 
 
 def validate(df):
@@ -100,40 +91,6 @@ def run_topsis(df, weights, pct_a, pct_ab):
     out["Classe"] = classe
     out["Valeur annuelle"] = df["Daily usage"] * 365 * df["Unit cost"]
     return out
-
-
-def fuzzy_topsis(df, spread, weight_terms):
-    def fuzzify(col):
-        if col in TFN_LING:
-            return np.array([TFN_LING[col][v] for v in df[col]])
-        x = df[col].values.astype(float)
-        T = np.c_[(1 - spread) * x, x, (1 + spread) * x]
-        lo, hi = T[:, 0].min(), T[:, 2].max()
-        return (T - lo) / (hi - lo)
-
-    F = {c: fuzzify(c) for c in COLUMNS}
-    FX = {g: sum(w * F[a] for a, w in comp.items()) for g, comp in TABLE2.items()}
-    FX["Cost"], FX["Size"] = F["Unit cost"], F["Unit size"]
-
-    n = len(df)
-    d_pos, d_neg = np.zeros(n), np.zeros(n)
-    for c in CRITERIA:
-        w = np.array(FUZZY_WEIGHT_TERMS[weight_terms[c]])
-        V = FX[c] / FX[c][:, 2].max() * w
-        d_pos += np.sqrt(((V - w) ** 2).mean(1))
-        d_neg += np.sqrt((V ** 2).mean(1))
-    return d_neg / (d_pos + d_neg), FX
-
-
-def fuzzy_memberships(p, pct_a, pct_ab, delta):
-    """Partition floue (Ruspini) sur le rang centile p ∈ [0, 1]."""
-    def ramp_down(x, a, b):
-        return np.clip((b - x) / (b - a), 0, 1) if b > a else (x <= a).astype(float)
-    a, ab = pct_a / 100, pct_ab / 100
-    mA = ramp_down(p, a - delta, a + delta)
-    mC = 1 - ramp_down(p, ab - delta, ab + delta)
-    mB = np.clip(1 - mA - mC, 0, 1)
-    return mA, mB, mC
 
 
 # ---------------- Machine learning

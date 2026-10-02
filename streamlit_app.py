@@ -9,7 +9,6 @@ page = st.navigation([
     st.Page("app_pages/donnees.py", title="Données", icon=":material/table_chart:", default=True),
     st.Page("app_pages/topsis_abc.py", title="TOPSIS et ABC", icon=":material/leaderboard:"),
     st.Page("app_pages/machine_learning.py", title="Machine learning", icon=":material/model_training:"),
-    st.Page("app_pages/approche_floue.py", title="Approche floue", icon=":material/blur_on:"),
 ])
 
 df, weights, pct_a, pct_ab = abc_ui.sidebar()

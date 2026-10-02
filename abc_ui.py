@@ -25,12 +25,6 @@ def cached_training(_df, classes: tuple, data_key: str):
     return core.train_and_evaluate(_df, list(classes))
 
 
-@st.cache_data(max_entries=20)
-def cached_fuzzy(df, spread, weight_terms: tuple):
-    cc, _ = core.fuzzy_topsis(df, spread, dict(zip(core.CRITERIA, weight_terms)))
-    return cc
-
-
 def init_state():
     for k, v in DEFAULTS.items():
         st.session_state.setdefault(k, v)
